@@ -2,8 +2,8 @@ MODULE ROOT
     IMPLICIT NONE 
 
     INTEGER, PARAMETER       :: IMAX      = 30
-	INTEGER, PARAMETER 	     :: NGRID     = 100
-	REAL, PARAMETER          :: TOLERANCE = 1.0E-6
+	INTEGER, PARAMETER       :: NGRID     = 100
+	REAL, PARAMETER          :: TOLERANCE = 1.0E-5
 	REAL, PARAMETER          :: PI        = 3.141592653589793
 
 CONTAINS
@@ -42,15 +42,18 @@ SUBROUTINE BRACKET ( f, left, right, nroot )
 END SUBROUTINE BRACKET
 
 ! Bisection method
-SUBROUTINE BISECTION ( f, left, right, root )
+SUBROUTINE BISECTION ( f, left, right, root, debug )
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(INOUT)      :: left, right
     REAL, INTENT(OUT)        :: root
+    INTEGER, INTENT(IN)      :: debug
 
     INTEGER                  :: nstep = 0
     REAL                     :: next_root, error
+
+    OPTIONAL debug 
 
     ! assumption: left < right
     IF ( left > right ) THEN
@@ -74,6 +77,9 @@ SUBROUTINE BISECTION ( f, left, right, root )
 
         ! relative error 
         error = ABS( (next_root - root)/next_root )
+
+        IF ( PRESENT(debug) ) PRINT 1000, nstep, left, right, next_root, f(left), f(next_root), error 
+        1000 FORMAT (I3, 5F12.5, 4X, E12.5)
 
         ! terminating condition 
         root = next_root 
