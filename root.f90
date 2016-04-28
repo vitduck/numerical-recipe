@@ -1,257 +1,282 @@
-MODULE ROOT 
+MODULE Root
     IMPLICIT NONE 
 
     INTEGER, PARAMETER       :: IMAX      = 30
-	INTEGER, PARAMETER       :: NGRID     = 100
-	REAL, PARAMETER          :: TOLERANCE = 1.0E-5
-	REAL, PARAMETER          :: PI        = 3.141592653589793
+    INTEGER, PARAMETER       :: NGRID     = 100
+    REAL, PARAMETER          :: TOLERANCE = 1.0E-5
+    REAL, PARAMETER          :: PI        = 3.141592653589793
 
 CONTAINS
 
-! bracket the interval to count the number of root 
-! based on the intermediate value theorem
-SUBROUTINE BRACKET ( f, left, right, nroot )
-	IMPLICIT NONE
-
-	REAL                     :: f
-	REAL, INTENT(IN)         :: left, right
-	INTEGER, INTENT(OUT)     :: nroot
-
-	INTEGER                  :: i
-	REAL                     :: dstep
-	REAL                     :: grid(NGRID), fgrid(NGRID)
-
-	nroot = 0
-
-    ! grid interval 
-	dstep = (right - left)/(NGRID - 1)
-
-    ! initialize grid 
-	grid = (/ (left + dstep * i, i = 0, NGRID - 1) /)
-
-    ! value of f at each grid point 
-	DO i = 1, NGRID
-		fgrid(i) = f(grid(i))
-	END DO
-
-    ! count the number of times f changes sign, 
-    ! i.e. number of root  
-	DO i = 1, NGRID - 1
-		IF ( fgrid(i) * fgrid(i+1) < 0 ) nroot = nroot + 1
-	END DO
-END SUBROUTINE BRACKET
-
-! Bisection method
-SUBROUTINE BISECTION ( f, left, right, root, debug )
+SUBROUTINE Bracket( f, a, b, nroot, debug )
     IMPLICIT NONE
 
     REAL                     :: f
-    REAL, INTENT(INOUT)      :: left, right
-    REAL, INTENT(OUT)        :: root
+    REAL, INTENT(IN)         :: a, b
+    INTEGER, INTENT(OUT)     :: nroot  
     INTEGER, INTENT(IN)      :: debug
 
-    INTEGER                  :: nstep = 0
-    REAL                     :: next_root, error
+    REAL                     :: h
+    REAL                     :: grid(NGRID), fgrid(NGRID)
+    INTEGER                  :: i
+
+    OPTIONAL                 :: debug
+
+    ! initialization 
+    nroot = 0 
+    h     = (b - a)/(NGRID - 1)
+    grid  = (/ (a + h * i, i = 0, NGRID - 1) /)
+
+    ! value of f at each grid point 
+    DO i = 1, NGRID
+        fgrid(i) = f(grid(i))
+        ! debug message 
+        IF ( PRESENT(debug) .AND. debug == 1 ) &
+            PRINT 1000, i, grid(i), fgrid(i) 
+            1000 FORMAT (I3, 2(F13.6))
+    END DO
+
+    ! count the number of times f changes sign, 
+    ! i.e. number of root  
+    DO i = 1, NGRID - 1
+        IF ( fgrid(i) * fgrid(i+1) < 0 ) nroot = nroot + 1
+    END DO
+END SUBROUTINE Bracket
+
+SUBROUTINE Bisection( f, a, b, x_n, debug )
+    IMPLICIT NONE
+
+    REAL                     :: f
+    REAL, INTENT(IN)         :: a, b
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug
+
+   REAL                      :: a_n, b_n, x_n_1, error
+   INTEGER                   :: nstep = 0
 
     OPTIONAL debug 
 
-    ! assumption: left < right
-    IF ( left > right ) THEN
+    ! assumption: [a, b]
+    IF ( a > b ) THEN
         PRINT '(A)', "WRONG BRACKET ORDER"
         RETURN 
     ! intermeidate value theorem 
-    ELSE IF ( f(left)*f(right) > 0 ) THEN
+    ELSE IF ( f(a)*f(b) > 0 ) THEN
         PRINT '(A)', "ROOT IS NOT BRACKETED"
         RETURN
     END IF
 
-    ! initial guess of root 
-    root = left
+    ! initialization 
+    a_n   = a
+    b_n   = b 
+    x_n_1 = a_n
+
+    DO
+        nstep = nstep + 1
+
+        ! next guess 
+        x_n = 0.5 * ( a_n + b_n )
+
+        ! relative error 
+        error = ABS((x_n - x_n_1)/x_n)
+
+        ! debug 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 2000, nstep, a_n, b_n, x_n, f(x_n), error 
+            2000 FORMAT (I3, 3F13.6, 4X, 2(ES13.6, 4X))
+
+        ! termination
+        x_n_1 = x_n
+        IF ( error < TOLERANCE ) RETURN 
+
+        ! reset the bracket 
+        IF ( f(x_n)*f(a_n) < 0.0 ) THEN
+            b_n = x_n
+        ELSE
+            a_n = x_n
+        END IF
+    END DO
+END SUBROUTINE Bisection
+
+SUBROUTINE Newton_Raphson( f, df, x_0, x_n, debug )
+    IMPLICIT NONE
+
+    REAL                     :: f, df
+    REAL, INTENT(IN)         :: x_0
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug 
     
+    REAL                     :: x_n_1, error
+    INTEGER                  :: nstep = 0
+
+    OPTIONAL debug 
+
+    ! initializationn
+    x_n_1 = x_0
+
     ! iteration 
     DO
         nstep = nstep + 1
 
         ! next guess 
-        next_root = 0.5 * ( left + right )
+        x_n = x_n_1 - f(x_n_1)/df(x_n_1) 
 
         ! relative error 
-        error = ABS( (next_root - root)/next_root )
+        error = ABS((x_n - x_n_1)/x_n_1)
 
-        IF ( PRESENT(debug) ) PRINT 1000, nstep, left, right, next_root, f(left), f(next_root), error 
-        1000 FORMAT (I3, 5F12.5, 4X, E12.5)
+        ! debug 
+        IF ( PRESENT(debug) ) & 
+            PRINT 3000, nstep, x_n, f(x_n), error
+            3000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
 
-        ! terminating condition 
-        root = next_root 
+        ! termination
+        x_n_1 = x_n 
+        IF ( error < TOLERANCE ) RETURN
+    END DO
+END SUBROUTINE Newton_Raphson
+
+SUBROUTINE False_Position( f, a, b, x_n, debug )
+    IMPLICIT NONE
+    
+    REAL                     :: f
+    REAL, INTENT(IN)         :: a, b
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug
+
+    REAL                     :: a_n, b_n, x_n_1, error
+    INTEGER                  :: nstep = 0
+
+    OPTIONAL debug   
+
+    ! assumption: [a, b]
+    IF ( a > b ) THEN
+        PRINT '(A)', "WRONG BRACKET ORDER"
+        RETURN 
+    ! intermeidate value theorem 
+    ELSE IF ( f(a)*f(b) > 0 ) THEN
+        PRINT '(A)', "ROOT IS NOT BRACKETED"
+        RETURN
+    END IF
+    
+    ! initializationn
+    a_n   = a 
+    b_n   = b
+    x_n_1 = a_n
+
+    DO
+        nstep = nstep + 1
+
+        ! next guess 
+        x_n = (a_n*f(b_n) - b_n*f(a_n))/(f(b_n) - f(a_n))
+        
+        ! relative error 
+        error = ABS((x_n - x_n_1)/x_n)
+
+        ! debug 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 4000, nstep, a_n, b_n, x_n, f(x_n), error 
+            4000 FORMAT (I3, 4F13.6, 4X, ES13.6)
+
+        ! termination
+        x_n_1 = x_n
         IF ( error < TOLERANCE ) RETURN 
         
         ! reset the bracket 
-        IF ( f(next_root)*f(left) < 0.0 ) THEN
-            right = next_root
+        IF ( f(x_n)*f(a_n) < 0.0 ) THEN
+            b_n = x_n
         ELSE
-            left = next_root
+            a_n = x_n
         END IF
     END DO
-END SUBROUTINE BISECTION
+END SUBROUTINE False_Position
 
-!! quadratic convergence
-!SUBROUTINE newton_raphson( f, df, guess, root )
-    !IMPLICIT NONE
-    !REAL              :: f, df
-    !REAL, INTENT(IN)  :: guess
-    !REAL, INTENT(OUT) :: root
-    !INTEGER           :: numIte, info
-    !REAL              :: error
+SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
+    IMPLICIT NONE
 
-    !numIte = 0
-    !root = guess
-    !DO
-        !error = -f(root)/df(root)
-        !root = root + error
-        !numIte = numIte + 1
-        !CALL printOutput( root, ABS(error), numIte, info )
-        !IF ( info == 1 .OR. info == 2 ) EXIT
-    !END DO
-!END SUBROUTINE newton_raphson
+    REAL                     :: f
+    REAL, INTENT(IN)         :: x_0, x_1
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug 
 
-!! superlinear convergence
-!! newton_raphson with approximated derivative
-!SUBROUTINE secant( f, fGuess, sGuess, root )
-    !IMPLICIT NONE
-    !REAL              :: f
-    !REAL, INTENT(IN)  :: fGuess, sGuess
-    !REAL, INTENT(OUT) :: root
-    !INTEGER           :: numIte, info
-    !REAL              :: error, x0, x1
+    REAL                     :: x_n_2, x_n_1, error  
+    INTEGER                  :: nstep = 0 
 
-    !x0 = fGuess
-    !x1 = sGuess
-    !root = x1
+    OPTIONAL debug 
 
-    !numIte = 0
-    !DO
-        !error = -f(x1) * (x1 - x0) / (f(x1) - f(x0))
-        !root = x1 + error
-        !numIte = numIte + 1
-        !CALL printOutput( root, ABS(error), numIte, info )
-        !IF ( info == 1 .OR. info == 2 ) EXIT
-        !x0 = x1
-        !x1 = root
-    !END DO
-!END SUBROUTINE secant
+    !initialization
+    x_n_2  = x_0
+    x_n_1  = x_1
 
-!! combination of bisection and secant
-!SUBROUTINE falsePosition( f, lBracket, rBracket, root )
-    !IMPLICIT NONE
-    !REAL              :: f
-    !REAL, INTENT(IN)  :: lBracket, rBracket
-    !REAL, INTENT(OUT) :: root
-    !INTEGER           :: numIte, info
-    !REAL              :: previous_root, error, left, right
+    DO
+        nstep = nstep + 1
+        
+        ! next guess 
+        x_n = x_n - f(x_n_1) * (x_n_1 - x_n_2)/(f(x_n_1) - f(x_n_2))
 
-    !IF ( f(lBracket)*f(rBracket) > 0 ) THEN
-        !WRITE (6,'(A)') "ROOT IS NOT BRACKETED"
-        !RETURN
-    !ELSE IF ( lBracket > rBracket ) THEN
-        !WRITE (6,'(A)') "WRONG BRACKET ORDER"
-        !RETURN
-    !END IF
+        ! relative error 
+        error  = ABS((x_n - x_n_1)/x_n_1)
+    
+        
+        ! debug 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 5000, nstep, x_n, f(x_n), error 
+            5000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
 
-    !left = lBracket
-    !right = rBracket
-    !previous_root = 0.5 * (left + right)
+        ! termination
+        x_n_2 = x_n_1
+        x_n_1 = x_n 
+        IF ( error < TOLERANCE ) RETURN 
 
-    !numIte = 0
-    !DO
-        !root = ( left*f(right) - right*f(left) ) / ( f(right) - f(left) )
-        !error = root - previous_root
-        !numIte = numIte + 1
-        !CALL printOutput( root, ABS(error), numIte, info )
-        !IF ( info == 1 .OR. info == 2 ) EXIT
-        !IF ( f(root)*f(left) < 0.0 ) THEN
-            !right = root
-        !ELSE
-            !left = root
-        !END IF
-        !previous_root = root
-    !END DO
-!END SUBROUTINE falsePosition
+    END DO
+END SUBROUTINE Secant 
 
-!SUBROUTINE mueller( f, fGuess, sGuess, tGuess, root )
-    !IMPLICIT NONE
-    !REAL              :: f
-    !REAL, INTENT(IN)  :: fGuess, sGuess, tGuess
-    !REAL, INTENT(OUT) :: root
-    !INTEGER           :: numIte, info
-    !REAL              :: error, x0, x1, x2
-    !REAL              :: a, b, c, delta
+SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
+    IMPLICIT NONE
 
-    !x0 = fGuess
-    !x1 = sGuess
-    !x2 = tGuess
+    REAL                     :: f
+    REAL, INTENT(IN)         :: x_0, x_1, x_2
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug
 
-    !root = x2
-    !numIte = 0
-    !DO
-        !a = ( (f(x0) - f(x2))*(x1 - x2) - (f(x1) - f(x2))*(x0 - x2) ) / &
-              !( (x0 - x2)*(x1 - x2)*(x0 - x1) )
-        !b = ( (f(x1) - f(x2))*(x0 - x2)**2 - (f(x0) - f(x2))*(x1 - x2)**2 ) / &
-              !( (x0 - x2)*(x1 - x2)*(x0 - x1) )
-        !c = f(x2)
-        !delta = b**2 - 4*a*c
-        !IF ( b  >= 0 ) error = -2*c / (b + SQRT(delta))
-        !IF ( b < 0 ) error = -2*c / (b - SQRT(delta))
-        !root = root + error
-        !numIte = numIte + 1
-        !CALL printOutput( root, ABS(error), numIte, info )
-        !IF ( info == 1 .OR. info == 2 ) EXIT
-        !x0 = x1
-        !x1 = x2
-        !x2 = root
-    !END DO
-!END SUBROUTINE mueller
+    REAL                     :: x_n_3, x_n_2, x_n_1, error
+    REAL                     :: a, b, c, delta
+    INTEGER                  :: nstep = 0
 
-!SUBROUTINE hybrid_newton_bisect( f, df, lBracket, rBracket, root )
-    !IMPLICIT NONE
-    !REAL                :: f, df
-    !REAL,INTENT(IN)     :: lBracket, rBracket
-    !REAL, INTENT(OUT)   :: root
-    !INTEGER             :: numIte, info
-    !REAL                :: left, right, error
+    OPTIONAL debug 
 
-    !IF ( f(lBracket)*f(rBracket) > 0 ) THEN
-        !WRITE (6,'(A)') "ROOT IS NOT BRACKETED"
-        !RETURN
-    !ELSE IF ( lBracket > rBracket ) THEN
-        !WRITE (6,'(A)') "WRONG BRACKET ORDER"
-        !RETURN
-    !END IF
+    x_n_3 = x_0
+    x_n_2 = x_1
+    x_n_1 = x_2
 
-    !left = lBracket
-    !right = rBracket
+    DO
+        nstep = nstep + 1
 
-    !root = 0.5 * (left + right)
-    !numIte = 0
+        a = ((f(x_n_3) - f(x_n_1))*(x_n_2 - x_n_1) - (f(x_n_2) - f(x_n_1))*(x_n_3 - x_n_1)) / &
+            ((x_n_3 - x_n_1)*(x_n_2 - x_n_1)*(x_n_3 - x_n_2))
+        b = ((f(x_n_2) - f(x_n_1))*(x_n_3 - x_n_1)**2 - (f(x_n_3) - f(x_n_1))*(x_n_2 - x_n_1)**2) / &
+            ((x_n_3 - x_n_1)*(x_n_2 - x_n_1)*(x_n_3 - x_n_2))
+        c = f(x_n_1)
+        
+        ! special Delta 
+        delta = b**2 - 4*a*c
 
-    !DO
-        !error = - f(root)/df(root)
-        !root = root + error
-        !numIte = numIte + 1
-        !CALL printOutput( root, ABS(error), numIte, info )
-        !IF ( root >= left .AND. root <= right ) THEN
-            !IF ( info == 1 .OR. info == 2 ) EXIT
-        !ELSE
-            !root = 0.5 * ( left + right )
-            !error = 0.5 * (left - right )
-            !numIte = numIte + 1
-            !CALL printOutput( root, ABS(error), numIte, info )
-            !IF ( info == 1 .OR. info == 2 ) EXIT
-            !IF ( f(root)*f(left) < 0.0 ) THEN
-                !right = root
-            !ELSE
-                !left = root
-            !END IF
-        !END IF
-    !END DO
-!END SUBROUTINE hybrid_newton_bisect
-END MODULE ROOT 
+        ! next guess 
+        IF ( b >= 0 ) error = -2*c/(b + SQRT(delta))
+        IF ( b  < 0 ) error = -2*c/(b - SQRT(delta))
+        x_n = x_n_1 + error 
+       
+        ! debug 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 6000, nstep, x_n, f(x_n), error 
+            6000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
+
+        ! termination
+        x_n_3 = x_n_2
+        x_n_2 = x_n_1
+        x_n_1 = x_n
+        error = ABS(error) 
+        IF ( error < TOLERANCE ) RETURN 
+    END DO
+END SUBROUTINE Mueller
+
+END MODULE Root
