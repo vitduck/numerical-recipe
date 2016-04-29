@@ -27,20 +27,26 @@ SUBROUTINE Bracket( f, a, b, nroot, debug )
     h     = (b - a)/(NGRID - 1)
     grid  = (/ (a + h * i, i = 0, NGRID - 1) /)
 
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) &
+        PRINT 1000, 'n', 'x', 'f(x)'
+
     ! value of f at each grid point 
     DO i = 1, NGRID
         fgrid(i) = f(grid(i))
         ! debug message 
         IF ( PRESENT(debug) .AND. debug == 1 ) &
-            PRINT 1000, i, grid(i), fgrid(i) 
-            1000 FORMAT (I3, 2(F13.6))
-    END DO
+            PRINT 2000, i, grid(i), fgrid(i) 
+        END DO
 
     ! count the number of times f changes sign, 
     ! i.e. number of root  
     DO i = 1, NGRID - 1
         IF ( fgrid(i) * fgrid(i+1) < 0 ) nroot = nroot + 1
     END DO
+    
+    1000 FORMAT (A3, 2(A10, 3X))
+    2000 FORMAT (I3, 2(F13.6))
 END SUBROUTINE Bracket
 
 SUBROUTINE Bisection( f, a, b, x_n, debug )
@@ -71,6 +77,10 @@ SUBROUTINE Bisection( f, a, b, x_n, debug )
     b_n   = b 
     x_n_1 = a_n
 
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) & 
+        PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+
     DO
         nstep = nstep + 1
 
@@ -83,7 +93,6 @@ SUBROUTINE Bisection( f, a, b, x_n, debug )
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
             PRINT 2000, nstep, a_n, b_n, x_n, f(x_n), error 
-            2000 FORMAT (I3, 3F13.6, 4X, 2(ES13.6, 4X))
 
         ! termination
         x_n_1 = x_n
@@ -96,44 +105,10 @@ SUBROUTINE Bisection( f, a, b, x_n, debug )
             a_n = x_n
         END IF
     END DO
+
+    1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
+    2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
 END SUBROUTINE Bisection
-
-SUBROUTINE Newton_Raphson( f, df, x_0, x_n, debug )
-    IMPLICIT NONE
-
-    REAL                     :: f, df
-    REAL, INTENT(IN)         :: x_0
-    REAL, INTENT(OUT)        :: x_n
-    INTEGER, INTENT(IN)      :: debug 
-    
-    REAL                     :: x_n_1, error
-    INTEGER                  :: nstep = 0
-
-    OPTIONAL debug 
-
-    ! initializationn
-    x_n_1 = x_0
-
-    ! iteration 
-    DO
-        nstep = nstep + 1
-
-        ! next guess 
-        x_n = x_n_1 - f(x_n_1)/df(x_n_1) 
-
-        ! relative error 
-        error = ABS((x_n - x_n_1)/x_n_1)
-
-        ! debug 
-        IF ( PRESENT(debug) ) & 
-            PRINT 3000, nstep, x_n, f(x_n), error
-            3000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
-
-        ! termination
-        x_n_1 = x_n 
-        IF ( error < TOLERANCE ) RETURN
-    END DO
-END SUBROUTINE Newton_Raphson
 
 SUBROUTINE False_Position( f, a, b, x_n, debug )
     IMPLICIT NONE
@@ -163,6 +138,10 @@ SUBROUTINE False_Position( f, a, b, x_n, debug )
     b_n   = b
     x_n_1 = a_n
 
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) & 
+        PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+
     DO
         nstep = nstep + 1
 
@@ -174,8 +153,7 @@ SUBROUTINE False_Position( f, a, b, x_n, debug )
 
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
-            PRINT 4000, nstep, a_n, b_n, x_n, f(x_n), error 
-            4000 FORMAT (I3, 4F13.6, 4X, ES13.6)
+            PRINT 2000, nstep, a_n, b_n, x_n, f(x_n), error 
 
         ! termination
         x_n_1 = x_n
@@ -188,7 +166,53 @@ SUBROUTINE False_Position( f, a, b, x_n, debug )
             a_n = x_n
         END IF
     END DO
+
+    1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
+    2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
 END SUBROUTINE False_Position
+
+SUBROUTINE Newton_Raphson( f, df, x_0, x_n, debug )
+    IMPLICIT NONE
+
+    REAL                     :: f, df
+    REAL, INTENT(IN)         :: x_0
+    REAL, INTENT(OUT)        :: x_n
+    INTEGER, INTENT(IN)      :: debug 
+    
+    REAL                     :: x_n_1, error
+    INTEGER                  :: nstep = 0
+
+    OPTIONAL debug 
+
+    ! initializationn
+    x_n_1 = x_0
+
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) & 
+        PRINT 1000, 'n', 'x', 'f(x)', 'error'
+
+    ! iteration 
+    DO
+        nstep = nstep + 1
+
+        ! next guess 
+        x_n = x_n_1 - f(x_n_1)/df(x_n_1) 
+
+        ! relative error 
+        error = ABS((x_n - x_n_1)/x_n_1)
+
+        ! debug 
+        IF ( PRESENT(debug) ) & 
+            PRINT 2000, nstep, x_n, f(x_n), error
+
+        ! termination
+        x_n_1 = x_n 
+        IF ( error < TOLERANCE ) RETURN
+    END DO
+
+    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
+    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
+END SUBROUTINE Newton_Raphson
 
 SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
     IMPLICIT NONE
@@ -207,6 +231,10 @@ SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
     x_n_2  = x_0
     x_n_1  = x_1
 
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) & 
+        PRINT 1000, 'n', 'x', 'f(x)', 'error'
+
     DO
         nstep = nstep + 1
         
@@ -216,18 +244,18 @@ SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
         ! relative error 
         error  = ABS((x_n - x_n_1)/x_n_1)
     
-        
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
-            PRINT 5000, nstep, x_n, f(x_n), error 
-            5000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
+            PRINT 2000, nstep, x_n, f(x_n), error 
 
         ! termination
         x_n_2 = x_n_1
         x_n_1 = x_n 
         IF ( error < TOLERANCE ) RETURN 
-
     END DO
+    
+    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
+    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
 END SUBROUTINE Secant 
 
 SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
@@ -244,9 +272,14 @@ SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
 
     OPTIONAL debug 
 
+    ! initialiazation
     x_n_3 = x_0
     x_n_2 = x_1
     x_n_1 = x_2
+
+    ! debug header 
+    IF ( PRESENT(debug) .AND. debug == 1 ) & 
+        PRINT 1000, 'n', 'x', 'f(x)', 'error'
 
     DO
         nstep = nstep + 1
@@ -267,8 +300,7 @@ SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
        
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
-            PRINT 6000, nstep, x_n, f(x_n), error 
-            6000 FORMAT (I3, F13.6, 4X, ES13.6, 4X, ES13.6)
+            PRINT 2000, nstep, x_n, f(x_n), error 
 
         ! termination
         x_n_3 = x_n_2
@@ -277,6 +309,8 @@ SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
         error = ABS(error) 
         IF ( error < TOLERANCE ) RETURN 
     END DO
+    
+    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
+    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
 END SUBROUTINE Mueller
-
 END MODULE Root
