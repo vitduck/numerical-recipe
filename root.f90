@@ -1,4 +1,4 @@
-MODULE Root
+MODULE ROOT
     IMPLICIT NONE 
 
     INTEGER, PARAMETER       :: IMAX      = 30
@@ -8,7 +8,7 @@ MODULE Root
 
 CONTAINS
 
-SUBROUTINE Bracket( f, a, b, nroot, debug )
+SUBROUTINE BRACKET( f, a, b, nroot, debug )
     IMPLICIT NONE
 
     REAL                     :: f
@@ -25,7 +25,7 @@ SUBROUTINE Bracket( f, a, b, nroot, debug )
     ! initialization 
     nroot = 0 
     h     = (b - a)/(NGRID - 1)
-    grid  = (/ (a + h * i, i = 0, NGRID - 1) /)
+    grid  = [ (a + h * i, i = 0, NGRID - 1) ]
 
     ! debug header 
     IF ( PRESENT(debug) .AND. debug == 1 ) &
@@ -47,9 +47,9 @@ SUBROUTINE Bracket( f, a, b, nroot, debug )
     
     1000 FORMAT (A3, 2(A10, 3X))
     2000 FORMAT (I3, 2(F13.6))
-END SUBROUTINE Bracket
+END SUBROUTINE BRACKET
 
-SUBROUTINE Bisection( f, a, b, x_n, debug )
+SUBROUTINE BISECTION( f, a, b, x_n, debug )
     IMPLICIT NONE
 
     REAL                     :: f
@@ -108,9 +108,9 @@ SUBROUTINE Bisection( f, a, b, x_n, debug )
 
     1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END SUBROUTINE Bisection
+END SUBROUTINE BISECTION
 
-SUBROUTINE False_Position( f, a, b, x_n, debug )
+SUBROUTINE FALSE_POSITION( f, a, b, x_n, debug )
     IMPLICIT NONE
     
     REAL                     :: f
@@ -169,9 +169,9 @@ SUBROUTINE False_Position( f, a, b, x_n, debug )
 
     1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END SUBROUTINE False_Position
+END SUBROUTINE FALSE_POSITION
 
-SUBROUTINE Newton_Raphson( f, df, x_0, x_n, debug )
+SUBROUTINE NEWTON_RAPHSON( f, df, x_0, x_n, debug )
     IMPLICIT NONE
 
     REAL                     :: f, df
@@ -212,9 +212,9 @@ SUBROUTINE Newton_Raphson( f, df, x_0, x_n, debug )
 
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE Newton_Raphson
+END SUBROUTINE NEWTON_RAPHSON
 
-SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
+SUBROUTINE SECANT( f, x_0, x_1, x_n, debug )
     IMPLICIT NONE
 
     REAL                     :: f
@@ -256,9 +256,9 @@ SUBROUTINE Secant( f, x_0, x_1, x_n, debug )
     
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE Secant 
+END SUBROUTINE SECANT 
 
-SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
+SUBROUTINE MUELLER( f, x_0, x_1, x_2, x_n, debug )
     IMPLICIT NONE
 
     REAL                     :: f
@@ -312,5 +312,6 @@ SUBROUTINE Mueller( f, x_0, x_1, x_2, x_n, debug )
     
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE Mueller
-END MODULE Root
+END SUBROUTINE MUELLER
+
+END MODULE ROOT
