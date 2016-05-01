@@ -8,28 +8,28 @@ PROGRAM BENCHMARK
     INTEGER                  :: nroot 
     INTEGER                  :: debug = 1
 
-    CALL BRACKET( f, a, b, nroot )
+    nroot =  BRACKET( f, a, b )
     PRINT 1000, nroot
     PRINT *
 
     PRINT 2000, a, b
-    CALL BISECTION( f, a, b, x, debug )
+    x = BISECTION( f, a, b, debug )
     PRINT *
 
     PRINT 3000, a, b 
-    CALL FALSE_POSITION( f, a, b, x, debug )
+    x = FALSE_POSITION( f, a, b, debug )
     PRINT *
     
     PRINT 4000, x_0
-    CALL NEWTON_RAPHSON( f, df, x_0, x, debug )
+    x = NEWTON_RAPHSON( f, df, x_0, debug )
     PRINT *
 
     PRINT 5000, x_0, x_1
-    CALL SECANT( f, x_0, x_1, x, debug )
+    x = SECANT( f, x_0, x_1, debug )
     PRINT *
 
     PRINT 6000, x_0, x_1, x_2
-    CALL MUELLER( f, x_0, x_1, x_2, x, debug )
+    x = MUELLER( f, x_0, x_1, x_2, debug )
 
     ! format
     1000 FORMAT ('There is ', I2, ' root(s)')

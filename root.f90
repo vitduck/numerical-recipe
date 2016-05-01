@@ -8,12 +8,11 @@ MODULE ROOT
 
 CONTAINS
 
-SUBROUTINE BRACKET( f, a, b, nroot, debug )
+INTEGER FUNCTION BRACKET( f, a, b, debug )
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
-    INTEGER, INTENT(OUT)     :: nroot  
     INTEGER, INTENT(IN)      :: debug
 
     REAL                     :: h
@@ -23,9 +22,9 @@ SUBROUTINE BRACKET( f, a, b, nroot, debug )
     OPTIONAL                 :: debug
 
     ! initialization 
-    nroot = 0 
-    h     = (b - a)/(NGRID - 1)
-    grid  = [ (a + h * i, i = 0, NGRID - 1) ]
+    BRACKET = 0 
+    h       = (b - a)/(NGRID - 1)
+    grid    = [ (a + h * i, i = 0, NGRID - 1) ]
 
     ! debug header 
     IF ( PRESENT(debug) .AND. debug == 1 ) &
@@ -42,22 +41,21 @@ SUBROUTINE BRACKET( f, a, b, nroot, debug )
     ! count the number of times f changes sign, 
     ! i.e. number of root  
     DO i = 1, NGRID - 1
-        IF ( fgrid(i) * fgrid(i+1) < 0 ) nroot = nroot + 1
+        IF ( fgrid(i) * fgrid(i+1) < 0 ) BRACKET = BRACKET + 1
     END DO
     
     1000 FORMAT (A3, 2(A10, 3X))
     2000 FORMAT (I3, 2(F13.6))
-END SUBROUTINE BRACKET
+END FUNCTION BRACKET
 
-SUBROUTINE BISECTION( f, a, b, x_n, debug )
+REAL FUNCTION BISECTION( f, a, b, debug )
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
-    REAL, INTENT(OUT)        :: x_n
     INTEGER, INTENT(IN)      :: debug
 
-   REAL                      :: a_n, b_n, x_n_1, error
+   REAL                      :: a_n, b_n, x_n_1, x_n, error
    INTEGER                   :: nstep = 0
 
     OPTIONAL debug 
@@ -96,7 +94,10 @@ SUBROUTINE BISECTION( f, a, b, x_n, debug )
 
         ! termination
         x_n_1 = x_n
-        IF ( error < TOLERANCE ) RETURN 
+        IF ( error < TOLERANCE ) THEN 
+            BISECTION = x_n
+            RETURN 
+        END IF
 
         ! reset the bracket 
         IF ( f(x_n)*f(a_n) < 0.0 ) THEN
@@ -108,17 +109,16 @@ SUBROUTINE BISECTION( f, a, b, x_n, debug )
 
     1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END SUBROUTINE BISECTION
+END FUNCTION BISECTION
 
-SUBROUTINE FALSE_POSITION( f, a, b, x_n, debug )
+REAL FUNCTION FALSE_POSITION( f, a, b, debug )
     IMPLICIT NONE
     
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
-    REAL, INTENT(OUT)        :: x_n
     INTEGER, INTENT(IN)      :: debug
 
-    REAL                     :: a_n, b_n, x_n_1, error
+    REAL                     :: a_n, b_n, x_n_1, x_n, error
     INTEGER                  :: nstep = 0
 
     OPTIONAL debug   
@@ -157,7 +157,10 @@ SUBROUTINE FALSE_POSITION( f, a, b, x_n, debug )
 
         ! termination
         x_n_1 = x_n
-        IF ( error < TOLERANCE ) RETURN 
+        IF ( error < TOLERANCE ) THEN 
+            FALSE_POSITION = x_n
+            RETURN 
+        END IF 
         
         ! reset the bracket 
         IF ( f(x_n)*f(a_n) < 0.0 ) THEN
@@ -169,17 +172,16 @@ SUBROUTINE FALSE_POSITION( f, a, b, x_n, debug )
 
     1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END SUBROUTINE FALSE_POSITION
+END FUNCTION FALSE_POSITION
 
-SUBROUTINE NEWTON_RAPHSON( f, df, x_0, x_n, debug )
+REAL FUNCTION NEWTON_RAPHSON( f, df, x_0, debug )
     IMPLICIT NONE
 
     REAL                     :: f, df
     REAL, INTENT(IN)         :: x_0
-    REAL, INTENT(OUT)        :: x_n
     INTEGER, INTENT(IN)      :: debug 
     
-    REAL                     :: x_n_1, error
+    REAL                     :: x_n_1, x_n, error
     INTEGER                  :: nstep = 0
 
     OPTIONAL debug 
@@ -207,22 +209,24 @@ SUBROUTINE NEWTON_RAPHSON( f, df, x_0, x_n, debug )
 
         ! termination
         x_n_1 = x_n 
-        IF ( error < TOLERANCE ) RETURN
+        IF ( error < TOLERANCE ) THEN 
+            NEWTON_RAPHSON = x_n
+            RETURN
+        ENDIF
     END DO
 
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE NEWTON_RAPHSON
+END FUNCTION NEWTON_RAPHSON
 
-SUBROUTINE SECANT( f, x_0, x_1, x_n, debug )
+REAL FUNCTION SECANT( f, x_0, x_1, debug )
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: x_0, x_1
-    REAL, INTENT(OUT)        :: x_n
     INTEGER, INTENT(IN)      :: debug 
 
-    REAL                     :: x_n_2, x_n_1, error  
+    REAL                     :: x_n_2, x_n_1, x_n, error  
     INTEGER                  :: nstep = 0 
 
     OPTIONAL debug 
@@ -251,22 +255,24 @@ SUBROUTINE SECANT( f, x_0, x_1, x_n, debug )
         ! termination
         x_n_2 = x_n_1
         x_n_1 = x_n 
-        IF ( error < TOLERANCE ) RETURN 
+        IF ( error < TOLERANCE ) THEN 
+            SECANT = x_n
+            RETURN 
+        END IF 
     END DO
     
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE SECANT 
+END FUNCTION SECANT 
 
-SUBROUTINE MUELLER( f, x_0, x_1, x_2, x_n, debug )
+REAL FUNCTION MUELLER( f, x_0, x_1, x_2, debug )
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: x_0, x_1, x_2
-    REAL, INTENT(OUT)        :: x_n
     INTEGER, INTENT(IN)      :: debug
 
-    REAL                     :: x_n_3, x_n_2, x_n_1, error
+    REAL                     :: x_n_3, x_n_2, x_n_1, x_n, error
     REAL                     :: a, b, c, delta
     INTEGER                  :: nstep = 0
 
@@ -307,11 +313,14 @@ SUBROUTINE MUELLER( f, x_0, x_1, x_2, x_n, debug )
         x_n_2 = x_n_1
         x_n_1 = x_n
         error = ABS(error) 
-        IF ( error < TOLERANCE ) RETURN 
+        IF ( error < TOLERANCE ) THEN 
+            MUELLER = x_n
+            RETURN 
+        END IF 
     END DO
     
     1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END SUBROUTINE MUELLER
+END FUNCTION MUELLER
 
 END MODULE ROOT
