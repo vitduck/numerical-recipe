@@ -7,7 +7,7 @@ PROGRAM BESSEL
     INTEGER, PARAMETER       :: ORDER = 3
 
     REAL, ALLOCATABLE        :: J0(:), J1(:), J2(:)
-    REAL, ALLOCATABLE        :: x(:), x_fit(:), f_fit(:) 
+    REAL, ALLOCATABLE        :: x(:), t(:), y(:) 
     REAL, ALLOCATABLE        :: Lx(:)  
 
     INTEGER                  :: i
@@ -16,8 +16,8 @@ PROGRAM BESSEL
     ALLOCATE(Lx(N))
 
     ! N poly requires N+1 (x, f(x)) pair  
-    ALLOCATE(x_fit(ORDER+1))
-    ALLOCATE(f_fit(ORDER+1))
+    ALLOCATE(t(ORDER+1))
+    ALLOCATE(y(ORDER+1))
 
     ! initialization 
     x  = [ ( REAL(i), i = 1, N ) ]
@@ -26,11 +26,11 @@ PROGRAM BESSEL
     J2 = BESSEL_JN( 2,x ) 
 
     ! data for interpolation 
-    x_fit =  x(4:6)
-    f_fit = J1(4:6)
+    t(:) =  x(4:6)
+    y(:) = J1(4:6)
 
     ! vector call 
-    Lx(:) = LAGRANGE(x(:), x_fit(:), f_fit(:), ORDER) 
+    Lx(:) = LAGRANGE(x(:), t(:), y(:), ORDER) 
 
     ! scalar call 
     !DO i = 1, N
@@ -45,7 +45,7 @@ PROGRAM BESSEL
     ! free memory 
     DEALLOCATE(x, J0, J1, J2)
     DEALLOCATE(Lx) 
-    DEALLOCATE(x_fit, f_fit)
+    DEALLOCATE(t, y)
 
 CONTAINS 
 
