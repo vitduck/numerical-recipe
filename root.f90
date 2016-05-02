@@ -8,12 +8,13 @@ MODULE ROOT
 
 CONTAINS
 
-INTEGER FUNCTION BRACKET( f, a, b, debug )
+FUNCTION BRACKET(f, a, b, debug)
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
     INTEGER, INTENT(IN)      :: debug
+    INTEGER                  :: BRACKET
 
     REAL                     :: h
     REAL                     :: grid(NGRID), fgrid(NGRID)
@@ -48,12 +49,13 @@ INTEGER FUNCTION BRACKET( f, a, b, debug )
     2000 FORMAT (I3, 2(F13.6))
 END FUNCTION BRACKET
 
-REAL FUNCTION BISECTION( f, a, b, debug )
+FUNCTION BISECTION(f, a, b, debug)
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
     INTEGER, INTENT(IN)      :: debug
+    REAL                     :: BISECTION
 
    REAL                      :: a_n, b_n, x_n_1, x_n, error
    INTEGER                   :: nstep = 0
@@ -111,12 +113,13 @@ REAL FUNCTION BISECTION( f, a, b, debug )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
 END FUNCTION BISECTION
 
-REAL FUNCTION FALSE_POSITION( f, a, b, debug )
+FUNCTION FALSE_POSITION(f, a, b, debug)
     IMPLICIT NONE
     
     REAL                     :: f
     REAL, INTENT(IN)         :: a, b
     INTEGER, INTENT(IN)      :: debug
+    REAL                     :: FALSE_POSITION
 
     REAL                     :: a_n, b_n, x_n_1, x_n, error
     INTEGER                  :: nstep = 0
@@ -174,12 +177,13 @@ REAL FUNCTION FALSE_POSITION( f, a, b, debug )
     2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
 END FUNCTION FALSE_POSITION
 
-REAL FUNCTION NEWTON_RAPHSON( f, df, x_0, debug )
+FUNCTION NEWTON_RAPHSON(f, df, x_0, debug)
     IMPLICIT NONE
 
     REAL                     :: f, df
     REAL, INTENT(IN)         :: x_0
     INTEGER, INTENT(IN)      :: debug 
+    REAL                     :: NEWTON_RAPHSON
     
     REAL                     :: x_n_1, x_n, error
     INTEGER                  :: nstep = 0
@@ -219,12 +223,13 @@ REAL FUNCTION NEWTON_RAPHSON( f, df, x_0, debug )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
 END FUNCTION NEWTON_RAPHSON
 
-REAL FUNCTION SECANT( f, x_0, x_1, debug )
+FUNCTION SECANT(f, x_0, x_1, debug)
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: x_0, x_1
     INTEGER, INTENT(IN)      :: debug 
+    REAL                     :: SECANT
 
     REAL                     :: x_n_2, x_n_1, x_n, error  
     INTEGER                  :: nstep = 0 
@@ -265,12 +270,13 @@ REAL FUNCTION SECANT( f, x_0, x_1, debug )
     2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
 END FUNCTION SECANT 
 
-REAL FUNCTION MUELLER( f, x_0, x_1, x_2, debug )
+FUNCTION MUELLER(f, x_0, x_1, x_2, debug)
     IMPLICIT NONE
 
     REAL                     :: f
     REAL, INTENT(IN)         :: x_0, x_1, x_2
     INTEGER, INTENT(IN)      :: debug
+    REAL                     :: MUELLER
 
     REAL                     :: x_n_3, x_n_2, x_n_1, x_n, error
     REAL                     :: a, b, c, delta

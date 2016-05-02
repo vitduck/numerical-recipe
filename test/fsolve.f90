@@ -8,28 +8,28 @@ PROGRAM BENCHMARK
     INTEGER                  :: nroot 
     INTEGER                  :: debug = 1
 
-    nroot =  BRACKET( f, a, b )
+    nroot =  BRACKET(f, a, b)
     PRINT 1000, nroot
     PRINT *
 
     PRINT 2000, a, b
-    x = BISECTION( f, a, b, debug )
+    x = BISECTION(f, a, b, debug)
     PRINT *
 
     PRINT 3000, a, b 
-    x = FALSE_POSITION( f, a, b, debug )
+    x = FALSE_POSITION(f, a, b, debug)
     PRINT *
     
     PRINT 4000, x_0
-    x = NEWTON_RAPHSON( f, df, x_0, debug )
+    x = NEWTON_RAPHSON(f, df, x_0, debug)
     PRINT *
 
     PRINT 5000, x_0, x_1
-    x = SECANT( f, x_0, x_1, debug )
+    x = SECANT(f, x_0, x_1, debug)
     PRINT *
 
     PRINT 6000, x_0, x_1, x_2
-    x = MUELLER( f, x_0, x_1, x_2, debug )
+    x = MUELLER(f, x_0, x_1, x_2, debug)
 
     ! format
     1000 FORMAT ('There is ', I2, ' root(s)')
@@ -37,7 +37,7 @@ PROGRAM BENCHMARK
     3000 FORMAT ('False position method: a = ', F7.3, ', b = ', F7.3)
     4000 FORMAT ('Newton-Raphson method: x_0 = ', F7.3)
     5000 FORMAT ('Secant method: x_0 = ', F7.3, ', x_1 = ', F7.3)
-    6000 FORMAT ('Mueller method: x_0 = ', F7.3, ', x_1 = ', F7.3, ', x_2 = ', F7.3 )
+    6000 FORMAT ('Mueller method: x_0 = ', F7.3, ', x_1 = ', F7.3, ', x_2 = ', F7.3)
 END PROGRAM BENCHMARK 
 
 REAL FUNCTION f(x) 

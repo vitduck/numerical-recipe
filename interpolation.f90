@@ -12,7 +12,6 @@ FUNCTION LAGRANGE_SCALAR(x, x_fit, f_fit, order)
     REAL, INTENT(IN)         :: x
     REAL, INTENT(IN)         :: x_fit(:), f_fit(:)
     INTEGER, INTENT(IN)      :: order
-    
     REAL                     :: LAGRANGE_SCALAR
 
     REAL                     :: coefficient 
@@ -44,7 +43,6 @@ FUNCTION LAGRANGE_VECTOR(x, x_fit, f_fit, order)
     REAL, INTENT(IN)         :: x(:)
     REAL, INTENT(IN)         :: x_fit(:), f_fit(:)
     INTEGER, INTENT(IN)      :: order
-
     REAL                     :: LAGRANGE_VECTOR(LBOUND(x, 1):UBOUND(x, 1))
     
     INTEGER                  :: i  
