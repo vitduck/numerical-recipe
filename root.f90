@@ -25,7 +25,7 @@ FUNCTION BRACKET(f, a, b, debug)
     ! initialization 
     BRACKET = 0 
     h       = (b - a)/(NGRID - 1)
-    grid    = [ (a + h * i, i = 0, NGRID - 1) ]
+    grid(:) = [ (a + h * i, i = 0, NGRID - 1) ]
 
     ! debug header 
     IF ( PRESENT(debug) .AND. debug == 1 ) &

@@ -6,46 +6,32 @@ PROGRAM BESSEL
     INTEGER, PARAMETER       :: N = 10
     INTEGER, PARAMETER       :: ORDER = 3
 
-    REAL, ALLOCATABLE        :: J0(:), J1(:), J2(:)
-    REAL, ALLOCATABLE        :: x(:), t(:), y(:) 
-    REAL, ALLOCATABLE        :: Lx(:)  
+    REAL                     :: J0(N), J1(N), J2(N)
+    REAL                     :: x(N), Lx(N), S3(N)  
 
     INTEGER                  :: i
 
-    ALLOCATE(x(N), J0(N), J1(N), J2(N)) 
-    ALLOCATE(Lx(N))
-
-    ! N poly requires N+1 (x, f(x)) pair  
-    ALLOCATE(t(ORDER+1))
-    ALLOCATE(y(ORDER+1))
-
     ! initialization 
-    x  = [ ( REAL(i), i = 1, N ) ]
-    J0 = BESSEL_J0( x ) 
-    J1 = BESSEL_J1( x ) 
-    J2 = BESSEL_JN( 2,x ) 
+     x(:) = [( REAL(i), i = 1, N )]
+    J0(:) = BESSEL_J0(x(:)) 
+    J1(:) = BESSEL_J1(x(:)) 
+    J2(:) = BESSEL_JN(2, x(:)) 
 
-    ! data for interpolation 
-    t(:) =  x(4:6)
-    y(:) = J1(4:6)
-
+    ! Lagrange interpolation
+    ! N poly requires N+1 (x, f(x)) pair  
     ! vector call 
-    Lx(:) = LAGRANGE(x(:), t(:), y(:), ORDER) 
+    Lx(:) = LAGRANGE(x(:), x(4:7), J1(4:7), ORDER) 
 
-    ! scalar call 
-    !DO i = 1, N
-        !Lx(i) = LAGRANGE(x(i), x_fit(:), f_fit(:), ORDER) 
+    ! cubic spline interpolation  
+    !DO i = 1, N 
+        !S3(i) = CUBIC_SPLINE(temp(i), x(:), J1(:))
     !END DO 
 
+    !! debug   
     DO i = 1, N 
-        PRINT 1000, i, J1(i), Lx(i) 
+        PRINT 1000, i, J1(i), Lx(i)
         1000 FORMAT (I3, (2F13.6))
     END DO 
-    
-    ! free memory 
-    DEALLOCATE(x, J0, J1, J2)
-    DEALLOCATE(Lx) 
-    DEALLOCATE(t, y)
 
 CONTAINS 
 
