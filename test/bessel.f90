@@ -4,7 +4,6 @@ PROGRAM BESSEL
     IMPLICIT NONE
 
     INTEGER, PARAMETER       :: N = 10
-    INTEGER, PARAMETER       :: ORDER = 3
 
     REAL                     :: J0(N), J1(N), J2(N)
     REAL                     :: x(N), Lx(N), S3(N)  
@@ -20,7 +19,7 @@ PROGRAM BESSEL
     ! Lagrange interpolation
     ! N poly requires N+1 (x, f(x)) pair  
     ! vector call 
-    Lx(:) = LAGRANGE(x(:), x(4:7), J1(4:7), ORDER) 
+    Lx(:) = LAGRANGE_INTERPOLATION(x(:), x(4:6), J1(4:6))
 
     ! cubic spline interpolation  
     !DO i = 1, N 

@@ -1,28 +1,59 @@
 MODULE INTERPOLATION 
-    INTERFACE LAGRANGE 
+    INTERFACE LAGRANGE_INTERPOLATION
         MODULE PROCEDURE LAGRANGE_SCALAR
         MODULE PROCEDURE LAGRANGE_VECTOR
     END INTERFACE
 
 CONTAINS 
 
-FUNCTION LAGRANGE_SCALAR(x, t, y, order)
+FUNCTION LAGRANGE_SCALAR(x, t, y) 
+    IMPLICIT NONE 
+    
+    REAL, INTENT(IN)         :: x
+    REAL, INTENT(IN)         :: t(:), y(:)
+    REAL                     :: LAGRANGE_SCALAR
+
+    ! sanity check
+    IF ( SIZE(t(:)) /= SIZE(y(:)) ) &
+        STOP 'Incompatible number of data between x and f(x)'
+
+    LAGRANGE_SCALAR = LAGRANGE_POLYNOMIAL(x, t, y)
+END FUNCTION LAGRANGE_SCALAR
+
+FUNCTION LAGRANGE_VECTOR(x, t, y)
+    IMPLICIT NONE 
+
+    REAL, INTENT(IN)         :: x(:)
+    REAL, INTENT(IN)         :: t(:), y(:)
+    REAL                     :: LAGRANGE_VECTOR(SIZE(x(:)))
+    
+    INTEGER                  :: i  
+
+    ! initialization 
+    LAGRANGE_VECTOR(:) = 0 
+    
+    ! sanity check
+    IF ( SIZE(t(:)) /= SIZE(y(:)) ) &
+        STOP 'Incompatible number of data between x and f(x)'
+
+    DO i = 1, SIZE(x(:))
+        LAGRANGE_VECTOR(i) = LAGRANGE_POLYNOMIAL(x(i), t(:), y(:))
+    END DO
+END FUNCTION LAGRANGE_VECTOR
+
+FUNCTION LAGRANGE_POLYNOMIAL(x, t, y)
     IMPLICIT NONE 
 
     REAL, INTENT(IN)         :: x
     REAL, INTENT(IN)         :: t(:), y(:)
-    INTEGER, INTENT(IN)      :: order
-    REAL                     :: LAGRANGE_SCALAR
+    REAL                     :: LAGRANGE_POLYNOMIAL
 
     REAL                     :: coefficient 
     INTEGER                  :: j, k
 
     ! initialization 
-    LAGRANGE_SCALAR = 0 
-
-    ! sanity check
-    CALL LAGRANGE_CHECK(t(:), y(:), order) 
-   
+    LAGRANGE_POLYNOMIAL = 0 
+      
     ! loop through n data point 
     DO j = 1, SIZE(t(:))
         coefficient = 1.0     
@@ -33,30 +64,9 @@ FUNCTION LAGRANGE_SCALAR(x, t, y, order)
                 coefficient = coefficient * (x - t(k))/(t(j) - t(k))
         END DO 
 
-        LAGRANGE_SCALAR = LAGRANGE_SCALAR + coefficient * y(j)
+        LAGRANGE_POLYNOMIAL = LAGRANGE_POLYNOMIAL + coefficient * y(j)
     END DO   
-END FUNCTION LAGRANGE_SCALAR
-
-FUNCTION LAGRANGE_VECTOR(x, t, y, order) 
-    IMPLICIT NONE 
-
-    REAL, INTENT(IN)         :: x(:)
-    REAL, INTENT(IN)         :: t(:), y(:)
-    INTEGER, INTENT(IN)      :: order
-    REAL                     :: LAGRANGE_VECTOR(SIZE(x(:)))
-    
-    INTEGER                  :: i  
-
-    ! initialization 
-    LAGRANGE_VECTOR(:) = 0 
-
-    ! sanity check
-    CALL LAGRANGE_CHECK(t(:), y(:), order) 
-
-    DO i = 1, SIZE(x(:))
-        LAGRANGE_VECTOR(i) = LAGRANGE_SCALAR(x(i), t(:), y(:), order)
-    END DO
-END FUNCTION LAGRANGE_VECTOR
+END FUNCTION LAGRANGE_POLYNOMIAL
 
 !FUNCTION CUBIC_SPLINE(x, t, y)
     !IMPLICIT NONE 
@@ -89,22 +99,6 @@ END FUNCTION LAGRANGE_VECTOR
 !-----------
 ! AUXILARY !
 !-----------
-SUBROUTINE LAGRANGE_CHECK(t, y, order) 
-    IMPLICIT NONE 
-    
-    REAL, INTENT(IN)         :: t(:), y(:)
-    INTEGER, INTENT(IN)      :: order
-
-    IF ( SIZE(t(:)) /= SIZE(y(:)) ) &
-        STOP 'Incompatible number of data between x and f(x)'
-
-    IF ( SIZE(t(:)) < order ) THEN 
-        PRINT 1000, order
-        1000 FORMAT ('Not enough data points to fit to ', I2, 'th order polynomial')
-        STOP
-    END IF 
-END SUBROUTINE LAGRANGE_CHECK
-
 !SUBROUTINE CUBIC_SPLINE_INIT(t, y, s2)
     !IMPLICIT NONE 
 
@@ -163,8 +157,8 @@ FUNCTION CUBIC_SPLINE_INDEX(x, t)
 
     ! initialization 
     ! preseving the index of t(:)
-    a = LBOUND(t(:),1)
-    b = UBOUND(t(:),1)
+    a = 1
+    b = SIZE(t(:))
 
     ! bisection 
     DO WHILE ( (b - a) > 1 )
@@ -181,7 +175,7 @@ FUNCTION CUBIC_SPLINE_INDEX(x, t)
 
     ! points at the boundaries 
     IF ( x == t(a) ) THEN 
-        CUBIC_SPLINE_INDEX = a 
+        CUBIC_SPLINE_INDEX = 1 
     ELSE IF ( x == t(b) ) THEN 
         CUBIC_SPLINE_INDEX = b-1
     ! somewhere in the midle 
