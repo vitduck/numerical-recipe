@@ -4,6 +4,11 @@ MODULE INTERPOLATION
         MODULE PROCEDURE LAGRANGE_VECTOR
     END INTERFACE
 
+    INTERFACE CUBIC_SPLINE_INTERPOLATION 
+        MODULE PROCEDURE CUBIC_SPLINE_VECTOR
+        MODULE PROCEDURE CUBIC_SPLINE_SCALAR
+    END INTERFACE CUBIC_SPLINE_INTERPOLATION 
+
 CONTAINS 
 
 FUNCTION LAGRANGE_SCALAR(x, t, y) 
@@ -68,83 +73,133 @@ FUNCTION LAGRANGE_POLYNOMIAL(x, t, y)
     END DO   
 END FUNCTION LAGRANGE_POLYNOMIAL
 
-!FUNCTION CUBIC_SPLINE(x, t, y)
-    !IMPLICIT NONE 
+FUNCTION CUBIC_SPLINE_SCALAR(x, t, y) 
+    IMPLICIT NONE 
 
-    !REAL, INTENT(IN)         :: x
-    !REAL, INTENT(IN)         :: t(:), y(:)
-    !REAL                     :: CUBIC_SPLINE
+    REAL, INTENT(IN)         :: x 
+    REAL, INTENT(IN)         :: t(:), y(:)
+    REAL                     :: CUBIC_SPLINE_SCALAR
 
-    !REAL                     :: S2(LBOUND(t(:),1):UBOUND(t(:),1))
-    !REAL                     :: h 
-    !REAL                     :: A, B, C
-    !INTEGER                  :: i
+    REAL, ALLOCATABLE        :: S2(:) 
+    INTEGER                  :: NSIZE
 
-    !! initialization of second derivative 
-    !CALL CUBIC_SPLINE_INIT(t(:), y(:), S2(:))
+    ! sanity check
+    IF ( SIZE(t(:)) /= SIZE(y(:)) ) &
+        STOP 'Incompatible number of data between x and f(x)'
 
-    !! bracket x value 
-    !i = CUBIC_SPLINE_INDEX(x, t(:))  
+    NSIZE = SIZE(t(:))
+    
+    ALLOCATE(S2(NSIZE))
 
-    !! horner polynomial 
-    !! S_i(x) = y_i + (x-t_i)[C + (x-t_i)[B + (x-t_i)A]]
-    !h = t(i+1) - t(i) 
-    !A = (S2(i+1) - S2(i))/(6*h)
-    !B = S2(i)/2 
-    !C = -h*S2(i+1)/6 - h*S2(i)/3 + (y(i+1) - y(i))/h
+    CALL CUBIC_SPLINE_INIT(t(:), y(:), S2(:))
 
-    !CUBIC_SPLINE = y(i) + (x-t(i))*(C + (x-t(i))*(B + (x-t(i)*A)))
-!END FUNCTION CUBIC_SPLINE
+    CUBIC_SPLINE_SCALAR = CUBIC_SPLINE_POLYNOMIAL(x, t(:), y(:), S2(:))
 
-!-----------
-! AUXILARY !
-!-----------
-!SUBROUTINE CUBIC_SPLINE_INIT(t, y, s2)
-    !IMPLICIT NONE 
+    DEALLOCATE(S2)
+END FUNCTION CUBIC_SPLINE_SCALAR
 
-    !REAL, INTENT(IN)         :: t(:), y(:) 
-    !REAL, INTENT(OUT)        :: s2(:) 
+FUNCTION CUBIC_SPLINE_VECTOR(x, t, y) 
+    IMPLICIT NONE 
 
-    !REAL                     :: beta(LBOUND(t(:),1):UBOUND(t(:),1))
-    !REAL                     :: a, b, c, r
-    !INTEGER                  :: i  
+    REAL, INTENT(IN)         :: x(:) 
+    REAL, INTENT(IN)         :: t(:), y(:)
+    REAL                     :: CUBIC_SPLINE_VECTOR(SIZE(x(:)))
+    
+    REAL, ALLOCATABLE        :: S2(:) 
+    INTEGER                  :: i, NSIZE
+    
+    ! sanity check
+    IF ( SIZE(t(:)) /= SIZE(y(:)) ) &
+        STOP 'Incompatible number of data between x and f(x)'
 
-    !! natural spline
-    !! this gives rise to a N-2 linear system 
-    !s2(LBOUND(t(:),1)) = 0.0 
-    !s2(UBOUND(t(:),1)) = 0.0 
+    NSIZE = SIZE(t(:))
 
-    !! initialization 
-    !! note: i = 2, N-1
-    !! beta(1) and beta(N) is undefined because of boundary condition 
-    !beta(2) = 2*(t(3) - t(1))
-    !s2(2)   = 6*((y(3) - y(2))/(t(3)-t(2)) - (y(2) - y(1))/(t(2) - t(1)))  
+    ALLOCATE(S2(NSIZE))
 
-    !! forward elimination 
-    !DO i = 3, UBOUND(t(:),1) - 1 
-        !! off-diagonal term ( symmetric matrix A(i) = C(i-1) )
-        !a = t(i) -t(i-1) 
-        !c = a 
+    CALL CUBIC_SPLINE_INIT(t(:), y(:), S2(:))
 
-        !! diagonal term   
-        !b = 2.0*(t(i+1) - t(i-1))
+    DO i = 1, SIZE(x(:))  
+        CUBIC_SPLINE_VECTOR(i) = CUBIC_SPLINE_POLYNOMIAL(x(i), t(:), y(:), S2(:))
+    END DO 
+
+    DEALLOCATE(S2)
+END FUNCTION CUBIC_SPLINE_VECTOR
+
+FUNCTION CUBIC_SPLINE_POLYNOMIAL(x, t, y, S2)
+    IMPLICIT NONE 
+
+    REAL, INTENT(IN)         :: x
+    REAL, INTENT(IN)         :: t(:), y(:)
+    REAL, INTENT(IN)         :: S2(:)
+    REAL                     :: CUBIC_SPLINE_POLYNOMIAL
+
+    REAL                     :: h, A, B, C, D
+    INTEGER                  :: i
+
+    ! bracket x value 
+    i = CUBIC_SPLINE_INDEX(x, t(:))  
+
+    h = t(i+1) - t(i) 
+    A = S2(i+1)/(6*h)
+    B = S2(i)/(6*h)
+    C = y(i+1)/h - S2(i+1)*h/6
+    D = y(i)/h - S2(i)*h/6
+
+    CUBIC_SPLINE_POLYNOMIAL = A*(x - t(i))**3 - B*(x-t(i+1))**3 + C*(x-t(i)) - D*(x-t(i+1))
+END FUNCTION CUBIC_SPLINE_POLYNOMIAL
+
+SUBROUTINE CUBIC_SPLINE_INIT(t, y, S2)
+    IMPLICIT NONE 
+
+    REAL, INTENT(IN)         :: t(:), y(:) 
+    REAL, INTENT(OUT)        :: S2(:) 
+
+    REAL, ALLOCATABLE        :: beta(:) 
+    REAL                     :: a, b, c, r
+    INTEGER                  :: NSIZE 
+    INTEGER                  :: i 
+
+    
+    NSIZE = SIZE(t(:))
+    ALLOCATE(beta(NSIZE)) 
+
+    ! natural spline
+    ! this gives rise to a N-2 linear system of equations  
+    S2(1) = 0.0 
+    S2(NSIZE) = 0.0 
+
+    ! note: i = 2, N-1
+    ! beta(1) and beta(N) is undefined because of boundary condition 
+    beta(2) = 2*(t(3) - t(1))
+    S2(2)   = 6*((y(3) - y(2))/(t(3)-t(2)) - (y(2) - y(1))/(t(2) - t(1)))  
+
+    ! forward elimination 
+    DO i = 3, NSIZE - 1 
+        ! off-diagonal term ( symmetric matrix A(i) = C(i-1) )
+        a = t(i) -t(i-1) 
+        c = a 
+
+        ! diagonal term   
+        b = 2.0*(t(i+1) - t(i-1))
         
-        !! right-hand side 
-        !r = 6.0*((y(i+1)-y(i))/(t(i+1)-t(i)) - (y(i)-y(i-1))/(t(i)-t(i-1)))
+        ! right-hand side 
+        r = 6.0*((y(i+1)-y(i))/(t(i+1)-t(i)) - (y(i)-y(i-1))/(t(i)-t(i-1)))
 
-        !! eliminiation 
-        !beta(i) = b - a*c/beta(i-1) 
-        !s2(i)   = r - a*s2(i-1)/beta(i-1)
-    !END DO 
+        ! eliminiation 
+        beta(i) = b - a*c/beta(i-1) 
+        s2(i)   = r - a*s2(i-1)/beta(i-1)
+    END DO 
 
-    !! backward substitution 
-    !s2(UBOUND(t(:),1)-1) = s2(UBOUND(t(:),1)-1)/beta(UBOUND(t(:),1)-1)
-    !DO i = UBOUND(t(:),1) - 2, 2, -1
-        !! recover the off-diagonal term 
-        !c     = s2(i+1) - s2(i) 
-        !s2(i) = ( s2(i) - c*s2(i+1))/beta(i) 
-    !END DO 
-!END SUBROUTINE CUBIC_SPLINE_INIT
+    ! backward substitution 
+    S2(NSIZE - 1) = S2(NSIZE - 1)/beta(NSIZE - 1)
+    DO i = NSIZE - 2, 2, -1
+        ! recover the off-diagonal term 
+        c     = S2(i+1) - S2(i) 
+        S2(i) = ( S2(i) - c*S2(i+1))/beta(i) 
+    END DO 
+
+    DEALLOCATE(beta)
+END SUBROUTINE CUBIC_SPLINE_INIT
 
 FUNCTION CUBIC_SPLINE_INDEX(x, t)
     IMPLICIT NONE 
