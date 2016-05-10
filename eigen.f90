@@ -8,24 +8,29 @@ SUBROUTINE TRIDIAGONAL(A, B, C, X, R)
     REAL, INTENT(IN)         :: A(:), B(:), C(:), R(:)
     REAL, INTENT(OUT)        :: X(:) 
 
-    REAL                     :: beta(SIZE(B(:))) 
-    INTEGER                  :: i
+    REAL, ALLOCATABLE        :: beta(:) 
+    INTEGER                  :: i, NSIZE
 
     ! initialization 
+    NSIZE   = SIZE(B(:))
+    ALLOCATE(beta(NSIZE))
+
     beta(1) = B(1) 
-    X(1)  = R(1) 
+    X(1)    = R(1) 
 
     ! Forward elimination of x_i  
-    DO i = 2, n 
+    DO i = 2, NSIZE 
         beta(i) = B(i) - A(i)*C(i-1)/beta(i-1)
         X(i)    = R(i) - A(i)*X(i-1)/beta(i-1)
     END DO 
 
     ! Backward substitution 
-    X(n) = X(n)/beta(n) 
-    DO i = n-1, 1, -1 
+    X(NSIZE) = X(NSIZE)/beta(NSIZE) 
+    DO i = NSIZE-1, 1, -1 
         X(i) = (X(i) - C(i)*X(i+1))/beta(i)
     END DO 
+
+    DEALLOCATE(beta)
 END SUBROUTINE TRIDIAGONAL 
 
 END MODULE EIGEN 

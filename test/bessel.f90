@@ -23,7 +23,7 @@ PROGRAM BESSEL
 
     ! Lagrange interpolation (vector call)
     ! N poly requires N+1 (x, f(x)) pair
-    Lx(:) = LAGRANGE_INTERPOLATION(x(:), t(3:8), J1(3:8))
+    Lx(:) = LAGRANGE_INTERPOLATION(x(:), t(4:7), J1(4:7))
 
     ! cubic spline interpolation (vector call) 
     S3(:) = CUBIC_SPLINE_INTERPOLATION(x(:), t(:), J1(:))

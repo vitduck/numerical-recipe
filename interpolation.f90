@@ -93,6 +93,8 @@ FUNCTION CUBIC_SPLINE_SCALAR(x, t, y)
 
     CALL CUBIC_SPLINE_INIT(t(:), y(:), S2(:))
 
+    PRINT *, S2(:)
+
     CUBIC_SPLINE_SCALAR = CUBIC_SPLINE_POLYNOMIAL(x, t(:), y(:), S2(:))
 
     DEALLOCATE(S2)
@@ -155,7 +157,7 @@ SUBROUTINE CUBIC_SPLINE_INIT(t, y, S2)
     REAL, INTENT(OUT)        :: S2(:) 
 
     REAL, ALLOCATABLE        :: beta(:) 
-    REAL                     :: a, b, c, r
+    REAL                     :: a_i, b_i, c_i, r_i
     INTEGER                  :: NSIZE 
     INTEGER                  :: i 
 
@@ -176,26 +178,25 @@ SUBROUTINE CUBIC_SPLINE_INIT(t, y, S2)
     ! forward elimination 
     DO i = 3, NSIZE - 1 
         ! off-diagonal term ( symmetric matrix A(i) = C(i-1) )
-        a = t(i) -t(i-1) 
-        c = a 
+        a_i = t(i) - t(i-1) 
+        c_i = a_i
 
         ! diagonal term   
-        b = 2.0*(t(i+1) - t(i-1))
+        b_i = 2.0*(t(i+1) - t(i-1))
         
         ! right-hand side 
-        r = 6.0*((y(i+1)-y(i))/(t(i+1)-t(i)) - (y(i)-y(i-1))/(t(i)-t(i-1)))
+        r_i = 6.0*((y(i+1)-y(i))/(t(i+1)-t(i)) - (y(i)-y(i-1))/(t(i)-t(i-1)))
 
         ! eliminiation 
-        beta(i) = b - a*c/beta(i-1) 
-        s2(i)   = r - a*s2(i-1)/beta(i-1)
+        beta(i) = b_i - a_i*c_i/beta(i-1) 
+        S2(i)   = r_i - a_i*S2(i-1)/beta(i-1)
     END DO 
 
     ! backward substitution 
     S2(NSIZE - 1) = S2(NSIZE - 1)/beta(NSIZE - 1)
     DO i = NSIZE - 2, 2, -1
-        ! recover the off-diagonal term 
-        c     = S2(i+1) - S2(i) 
-        S2(i) = ( S2(i) - c*S2(i+1))/beta(i) 
+        c_i   = t(i+1) - t(i) 
+        S2(i) = ( S2(i) - c_i*S2(i+1))/beta(i) 
     END DO 
 
     DEALLOCATE(beta)
