@@ -1,12 +1,12 @@
 PROGRAM BENCHMARK
     USE ROOT
 
-    REAL                     :: a = 0, b = 1
-    REAL                     :: x, x_0 = 0.25, x_1 = 0.5, x_2 = 0.75
-    REAL, EXTERNAL           :: f, df
+    REAL           :: a = 0, b = 1
+    REAL           :: x, x_0 = 0.25, x_1 = 0.5, x_2 = 0.75
+    REAL, EXTERNAL :: f, df
 
-    INTEGER                  :: nroot 
-    INTEGER                  :: debug = 1
+    INTEGER        :: nroot 
+    INTEGER        :: debug = 1
 
     nroot =  BRACKET(f, a, b)
     PRINT 1000, nroot
@@ -43,15 +43,15 @@ END PROGRAM BENCHMARK
 REAL FUNCTION f(x) 
     IMPLICIT NONE 
 
-    REAL, INTENT(IN)         :: x 
+    REAL, INTENT(IN) :: x 
 
-    f = COS(x) - x*SIN(x) 
+    f = COS(x) - x * SIN(x) 
 END FUNCTION f
 
 REAL FUNCTION df(x) 
     IMPLICIT NONE 
 
-    REAL, INTENT(IN)         :: x 
+    REAL, INTENT(IN) :: x 
 
-    df = -2*SIN(x) - x*COS(x) 
+    df = -2 * SIN(x) - x * COS(x) 
 END FUNCTION df

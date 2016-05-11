@@ -3,30 +3,30 @@ PROGRAM BESSEL
 
     IMPLICIT NONE
 
-    INTEGER, PARAMETER       :: N = 10, NGRID = 90
+    INTEGER, PARAMETER         :: N = 10, NGRID = 90
 
-    REAL                     :: t(N), J0(N), J1(N), J2(N)
-    REAL                     :: x(NGRID+1), Lx(NGRID+1), S3(NGRID+1)  
+    REAL, DIMENSION(N)         :: t, J0, J1, J2
+    REAL, DIMENSION(NGRID + 1) :: x, Lx, S3
 
-    INTEGER                  :: i
-    REAL                     :: dgrid 
+    INTEGER                    :: i
+    REAL                       :: dgrid 
 
     ! (t, y) for interpolation 
-     t(:) = [ ( REAL(i), i = 1, N ) ]
-    J0(:) = BESSEL_J0(t(:)) 
-    J1(:) = BESSEL_J1(t(:)) 
-    J2(:) = BESSEL_JN(2, t(:)) 
+     t = [ ( REAL(i), i = 1, N ) ]
+    J0 = BESSEL_J0(t)
+    J1 = BESSEL_J1(t)
+    J2 = BESSEL_JN(2, t) 
 
     ! 1d grid 
-    dgrid = (t(N) - t(1))/NGRID
-    x(:) = [ ( t(1) + dgrid*i , i = 0, NGRID ) ]
+    dgrid = (t(N) - t(1)) / NGRID
+    x     = [ ( t(1) + dgrid * i , i = 0, NGRID ) ]
 
     ! Lagrange interpolation (vector call)
     ! N poly requires N+1 (x, f(x)) pair
-    Lx(:) = LAGRANGE_INTERPOLATION(x(:), t(4:7), J1(4:7))
+    Lx = LAGRANGE_INTERPOLATION(x, t(4:7), J1(4:7))
 
     ! cubic spline interpolation (vector call) 
-    S3(:) = CUBIC_SPLINE_INTERPOLATION(x(:), t(:), J1(:))
+    S3 = CUBIC_SPLINE_INTERPOLATION(x, t, J1)
 
     ! debug   
     DO i = 1, NGRID+1

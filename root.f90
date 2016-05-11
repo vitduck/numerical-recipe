@@ -1,94 +1,94 @@
 MODULE ROOT
     IMPLICIT NONE 
 
-    INTEGER, PARAMETER       :: IMAX      = 30
-    INTEGER, PARAMETER       :: NGRID     = 100
-    REAL, PARAMETER          :: TOLERANCE = 1.0E-5
-    REAL, PARAMETER          :: PI        = 3.141592653589793
+    INTEGER, PARAMETER :: IMAX      = 30
+    INTEGER, PARAMETER :: NGRID     = 100
+    REAL, PARAMETER    :: TOLERANCE = 1.0E-5
+    REAL, PARAMETER    :: PI        = 3.141592653589793
 
 CONTAINS
 
-FUNCTION BRACKET(f, a, b, debug)
-    IMPLICIT NONE
+    FUNCTION BRACKET(f, a, b, debug)
+        IMPLICIT NONE
 
-    REAL                     :: f
-    REAL, INTENT(IN)         :: a, b
-    INTEGER, INTENT(IN)      :: debug
-    INTEGER                  :: BRACKET
+        REAL                   :: f
+        REAL, INTENT(IN)       :: a, b
+        INTEGER, INTENT(IN)    :: debug
+        INTEGER                :: BRACKET
 
-    REAL                     :: h
-    REAL                     :: grid(NGRID), fgrid(NGRID)
-    INTEGER                  :: i
+        REAL                   :: h
+        REAL, DIMENSION(NGRID) :: grid, fgrid
+        INTEGER                :: i
 
-    OPTIONAL                 :: debug
+        OPTIONAL               :: debug
 
-    ! initialization 
-    BRACKET = 0 
-    h       = (b - a)/(NGRID - 1)
-    grid(:) = [ (a + h * i, i = 0, NGRID - 1) ]
+        ! initialization 
+        BRACKET = 0 
+        h       = (b - a) / (NGRID - 1)
+        grid(:) = [ (a + h * i, i = 0, NGRID - 1) ]
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) &
-        PRINT 1000, 'n', 'x', 'f(x)'
-
-    ! value of f at each grid point 
-    DO i = 1, NGRID
-        fgrid(i) = f(grid(i))
-        ! debug message 
+        ! debug header 
         IF ( PRESENT(debug) .AND. debug == 1 ) &
-            PRINT 2000, i, grid(i), fgrid(i) 
+            PRINT 1000, 'n', 'x', 'f(x)'
+
+        ! value of f at each grid point 
+        DO i = 1, NGRID
+            fgrid(i) = f(grid(i))
+            ! debug message 
+            IF ( PRESENT(debug) .AND. debug == 1 ) &
+                PRINT 2000, i, grid(i), fgrid(i) 
         END DO
 
-    ! count the number of times f changes sign, 
-    ! i.e. number of root  
-    DO i = 1, NGRID - 1
-        IF ( fgrid(i) * fgrid(i+1) < 0 ) BRACKET = BRACKET + 1
-    END DO
-    
-    1000 FORMAT (A3, 2(A10, 3X))
-    2000 FORMAT (I3, 2(F13.6))
-END FUNCTION BRACKET
+        ! count the number of times f changes sign, 
+        ! i.e. number of root  
+        DO i = 1, NGRID - 1
+            IF ( fgrid(i) * fgrid(i+1) < 0 ) BRACKET = BRACKET + 1
+        END DO
 
-FUNCTION BISECTION(f, a, b, debug)
-    IMPLICIT NONE
+        1000 FORMAT (A3, 2(A10, 3X))
+        2000 FORMAT (I3, 2(F13.6))
+    END FUNCTION BRACKET
 
-    REAL                     :: f
-    REAL, INTENT(IN)         :: a, b
-    INTEGER, INTENT(IN)      :: debug
-    REAL                     :: BISECTION
+    FUNCTION BISECTION(f, a, b, debug)
+        IMPLICIT NONE
 
-   REAL                      :: a_n, b_n, x_n_1, x_n, error
-   INTEGER                   :: nstep = 0
+        REAL                :: f
+        REAL, INTENT(IN)    :: a, b
+        INTEGER, INTENT(IN) :: debug
+        REAL                :: BISECTION
 
-    OPTIONAL debug 
+        REAL                :: a_n, b_n, x_n_1, x_n, error
+        INTEGER             :: nstep = 0
 
-    ! assumption: [a, b]
-    IF ( a > b ) THEN
-        PRINT '(A)', "WRONG BRACKET ORDER"
-        RETURN 
-    ! intermeidate value theorem 
-    ELSE IF ( f(a)*f(b) > 0 ) THEN
-        PRINT '(A)', "ROOT IS NOT BRACKETED"
-        RETURN
-    END IF
+        OPTIONAL debug 
 
-    ! initialization 
-    a_n   = a
-    b_n   = b 
-    x_n_1 = a_n
+        ! assumption: [a, b]
+        IF ( a > b ) THEN
+            PRINT '(A)', "WRONG BRACKET ORDER"
+            RETURN 
+            ! intermeidate value theorem 
+        ELSE IF ( f(a) * f(b) > 0 ) THEN
+            PRINT '(A)', "ROOT IS NOT BRACKETED"
+            RETURN
+        END IF
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) & 
-        PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+        ! initialization 
+        a_n   = a
+        b_n   = b 
+        x_n_1 = a_n
 
-    DO
+        ! debug header 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+
+        DO
         nstep = nstep + 1
 
         ! next guess 
         x_n = 0.5 * ( a_n + b_n )
 
         ! relative error 
-        error = ABS((x_n - x_n_1)/x_n)
+        error = ABS((x_n - x_n_1) / x_n)
 
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
@@ -102,57 +102,57 @@ FUNCTION BISECTION(f, a, b, debug)
         END IF
 
         ! reset the bracket 
-        IF ( f(x_n)*f(a_n) < 0.0 ) THEN
+        IF ( f(x_n) * f(a_n) < 0.0 ) THEN
             b_n = x_n
         ELSE
             a_n = x_n
         END IF
-    END DO
+        END DO
 
-    1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
-    2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END FUNCTION BISECTION
+        1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13)
+        2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
+    END FUNCTION BISECTION
 
-FUNCTION FALSE_POSITION(f, a, b, debug)
-    IMPLICIT NONE
-    
-    REAL                     :: f
-    REAL, INTENT(IN)         :: a, b
-    INTEGER, INTENT(IN)      :: debug
-    REAL                     :: FALSE_POSITION
+    FUNCTION FALSE_POSITION(f, a, b, debug)
+        IMPLICIT NONE
 
-    REAL                     :: a_n, b_n, x_n_1, x_n, error
-    INTEGER                  :: nstep = 0
+        REAL                :: f
+        REAL, INTENT(IN)    :: a, b
+        INTEGER, INTENT(IN) :: debug
+        REAL                :: FALSE_POSITION
 
-    OPTIONAL debug   
+        REAL                :: a_n, b_n, x_n_1, x_n, error
+        INTEGER             :: nstep = 0
 
-    ! assumption: [a, b]
-    IF ( a > b ) THEN
-        PRINT '(A)', "WRONG BRACKET ORDER"
-        RETURN 
-    ! intermeidate value theorem 
-    ELSE IF ( f(a)*f(b) > 0 ) THEN
-        PRINT '(A)', "ROOT IS NOT BRACKETED"
-        RETURN
-    END IF
-    
-    ! initializationn
-    a_n   = a 
-    b_n   = b
-    x_n_1 = a_n
+        OPTIONAL debug   
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) & 
-        PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+        ! assumption: [a, b]
+        IF ( a > b ) THEN
+            PRINT '(A)', "WRONG BRACKET ORDER"
+            RETURN 
+            ! intermeidate value theorem 
+        ELSE IF ( f(a) * f(b) > 0 ) THEN
+            PRINT '(A)', "ROOT IS NOT BRACKETED"
+            RETURN
+        END IF
 
-    DO
+        ! initializationn
+        a_n   = a 
+        b_n   = b
+        x_n_1 = a_n
+
+        ! debug header 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 1000, 'n', 'a', 'b', 'x', 'f(x)', 'error'
+
+        DO
         nstep = nstep + 1
 
         ! next guess 
-        x_n = (a_n*f(b_n) - b_n*f(a_n))/(f(b_n) - f(a_n))
-        
+        x_n = (a_n * f(b_n) - b_n * f(a_n)) / (f(b_n) - f(a_n))
+
         ! relative error 
-        error = ABS((x_n - x_n_1)/x_n)
+        error = ABS((x_n - x_n_1) / x_n)
 
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
@@ -164,48 +164,48 @@ FUNCTION FALSE_POSITION(f, a, b, debug)
             FALSE_POSITION = x_n
             RETURN 
         END IF 
-        
+
         ! reset the bracket 
-        IF ( f(x_n)*f(a_n) < 0.0 ) THEN
+        IF ( f(x_n) * f(a_n) < 0.0 ) THEN
             b_n = x_n
         ELSE
             a_n = x_n
         END IF
-    END DO
+        END DO
 
-    1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13 )
-    2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
-END FUNCTION FALSE_POSITION
+        1000 FORMAT (A3, 3(A10, 3X), A13, 4X, A13)
+        2000 FORMAT (I3, 3F13.6, 2(4X, ES13.6))
+    END FUNCTION FALSE_POSITION
 
-FUNCTION NEWTON_RAPHSON(f, df, x_0, debug)
-    IMPLICIT NONE
+    FUNCTION NEWTON_RAPHSON(f, df, x_0, debug)
+        IMPLICIT NONE
 
-    REAL                     :: f, df
-    REAL, INTENT(IN)         :: x_0
-    INTEGER, INTENT(IN)      :: debug 
-    REAL                     :: NEWTON_RAPHSON
-    
-    REAL                     :: x_n_1, x_n, error
-    INTEGER                  :: nstep = 0
+        REAL                :: f, df
+        REAL, INTENT(IN)    :: x_0
+        INTEGER, INTENT(IN) :: debug 
+        REAL                :: NEWTON_RAPHSON
 
-    OPTIONAL debug 
+        REAL                :: x_n_1, x_n, error
+        INTEGER             :: nstep = 0
 
-    ! initializationn
-    x_n_1 = x_0
+        OPTIONAL debug 
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) & 
-        PRINT 1000, 'n', 'x', 'f(x)', 'error'
+        ! initializationn
+        x_n_1 = x_0
 
-    ! iteration 
-    DO
+        ! debug header 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+                PRINT 1000, 'n', 'x', 'f(x)', 'error'
+
+        ! iteration 
+        DO
         nstep = nstep + 1
 
         ! next guess 
-        x_n = x_n_1 - f(x_n_1)/df(x_n_1) 
+        x_n = x_n_1 - f(x_n_1) / df(x_n_1) 
 
         ! relative error 
-        error = ABS((x_n - x_n_1)/x_n_1)
+        error = ABS((x_n - x_n_1) / x_n_1)
 
         ! debug 
         IF ( PRESENT(debug) ) & 
@@ -217,42 +217,42 @@ FUNCTION NEWTON_RAPHSON(f, df, x_0, debug)
             NEWTON_RAPHSON = x_n
             RETURN
         ENDIF
-    END DO
+        END DO
 
-    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
-    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END FUNCTION NEWTON_RAPHSON
+        1000 FORMAT (A3, (A10, 3X), A13, 4X, A13)
+        2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
+    END FUNCTION NEWTON_RAPHSON
 
-FUNCTION SECANT(f, x_0, x_1, debug)
-    IMPLICIT NONE
+    FUNCTION SECANT(f, x_0, x_1, debug)
+        IMPLICIT NONE
 
-    REAL                     :: f
-    REAL, INTENT(IN)         :: x_0, x_1
-    INTEGER, INTENT(IN)      :: debug 
-    REAL                     :: SECANT
+        REAL                :: f
+        REAL, INTENT(IN)    :: x_0, x_1
+        INTEGER, INTENT(IN) :: debug 
+        REAL                :: SECANT
 
-    REAL                     :: x_n_2, x_n_1, x_n, error  
-    INTEGER                  :: nstep = 0 
+        REAL                :: x_n_2, x_n_1, x_n, error  
+        INTEGER             :: nstep = 0 
 
-    OPTIONAL debug 
+        OPTIONAL debug 
 
-    !initialization
-    x_n_2  = x_0
-    x_n_1  = x_1
+        !initialization
+        x_n_2  = x_0
+        x_n_1  = x_1
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) & 
-        PRINT 1000, 'n', 'x', 'f(x)', 'error'
+        ! debug header 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 1000, 'n', 'x', 'f(x)', 'error'
 
-    DO
+        DO
         nstep = nstep + 1
-        
+
         ! next guess 
-        x_n = x_n - f(x_n_1) * (x_n_1 - x_n_2)/(f(x_n_1) - f(x_n_2))
+        x_n = x_n - f(x_n_1) * (x_n_1 - x_n_2) / (f(x_n_1) - f(x_n_2))
 
         ! relative error 
-        error  = ABS((x_n - x_n_1)/x_n_1)
-    
+        error  = ABS((x_n - x_n_1) / x_n_1)
+
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
             PRINT 2000, nstep, x_n, f(x_n), error 
@@ -264,52 +264,52 @@ FUNCTION SECANT(f, x_0, x_1, debug)
             SECANT = x_n
             RETURN 
         END IF 
-    END DO
-    
-    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
-    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END FUNCTION SECANT 
+        END DO
 
-FUNCTION MUELLER(f, x_0, x_1, x_2, debug)
-    IMPLICIT NONE
+        1000 FORMAT (A3, (A10, 3X), A13, 4X, A13)
+        2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
+    END FUNCTION SECANT 
 
-    REAL                     :: f
-    REAL, INTENT(IN)         :: x_0, x_1, x_2
-    INTEGER, INTENT(IN)      :: debug
-    REAL                     :: MUELLER
+    FUNCTION MUELLER(f, x_0, x_1, x_2, debug)
+        IMPLICIT NONE
 
-    REAL                     :: x_n_3, x_n_2, x_n_1, x_n, error
-    REAL                     :: a, b, c, delta
-    INTEGER                  :: nstep = 0
+        REAL                :: f
+        REAL, INTENT(IN)    :: x_0, x_1, x_2
+        INTEGER, INTENT(IN) :: debug
+        REAL                :: MUELLER
 
-    OPTIONAL debug 
+        REAL                :: x_n_3, x_n_2, x_n_1, x_n, error
+        REAL                :: a, b, c, delta
+        INTEGER             :: nstep = 0
 
-    ! initialiazation
-    x_n_3 = x_0
-    x_n_2 = x_1
-    x_n_1 = x_2
+        OPTIONAL debug 
 
-    ! debug header 
-    IF ( PRESENT(debug) .AND. debug == 1 ) & 
-        PRINT 1000, 'n', 'x', 'f(x)', 'error'
+        ! initialiazation
+        x_n_3 = x_0
+        x_n_2 = x_1
+        x_n_1 = x_2
 
-    DO
+        ! debug header 
+        IF ( PRESENT(debug) .AND. debug == 1 ) & 
+            PRINT 1000, 'n', 'x', 'f(x)', 'error'
+
+        DO
         nstep = nstep + 1
 
-        a = ((f(x_n_3) - f(x_n_1))*(x_n_2 - x_n_1) - (f(x_n_2) - f(x_n_1))*(x_n_3 - x_n_1)) / &
-            ((x_n_3 - x_n_1)*(x_n_2 - x_n_1)*(x_n_3 - x_n_2))
-        b = ((f(x_n_2) - f(x_n_1))*(x_n_3 - x_n_1)**2 - (f(x_n_3) - f(x_n_1))*(x_n_2 - x_n_1)**2) / &
-            ((x_n_3 - x_n_1)*(x_n_2 - x_n_1)*(x_n_3 - x_n_2))
+        a = ((f(x_n_3) - f(x_n_1)) * (x_n_2 - x_n_1) - (f(x_n_2) - f(x_n_1)) * (x_n_3 - x_n_1)) / &
+                  ((x_n_3 - x_n_1) * (x_n_2 - x_n_1) * (x_n_3 - x_n_2))
+        b = ((f(x_n_2) - f(x_n_1)) * (x_n_3 - x_n_1)**2 - (f(x_n_3) - f(x_n_1)) * (x_n_2 - x_n_1)**2) / &
+                  ((x_n_3 - x_n_1) * (x_n_2 - x_n_1) * (x_n_3 - x_n_2))
         c = f(x_n_1)
-        
+
         ! special Delta 
         delta = b**2 - 4*a*c
 
         ! next guess 
-        IF ( b >= 0 ) error = -2*c/(b + SQRT(delta))
-        IF ( b  < 0 ) error = -2*c/(b - SQRT(delta))
+        IF ( b >= 0 ) error = -2 * c / (b + SQRT(delta))
+        IF ( b  < 0 ) error = -2 * c / (b - SQRT(delta))
         x_n = x_n_1 + error 
-       
+
         ! debug 
         IF ( PRESENT(debug) .AND. debug == 1 ) & 
             PRINT 2000, nstep, x_n, f(x_n), error 
@@ -323,10 +323,9 @@ FUNCTION MUELLER(f, x_0, x_1, x_2, debug)
             MUELLER = x_n
             RETURN 
         END IF 
-    END DO
-    
-    1000 FORMAT (A3, (A10, 3X), A13, 4X, A13 )
-    2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
-END FUNCTION MUELLER
+        END DO
 
+        1000 FORMAT (A3, (A10, 3X), A13, 4X, A13)
+        2000 FORMAT (I3, F13.6, 2(4X, ES13.6))
+    END FUNCTION MUELLER
 END MODULE ROOT
