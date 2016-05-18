@@ -1,6 +1,15 @@
 MODULE EIGEN 
 
 CONTAINS 
+    FUNCTION OUTER(A, B) 
+        IMPLICIT NONE 
+
+        REAL, DIMENSION(:)                :: A, B 
+        REAL, DIMENSION(SIZE(A), SIZE(B)) :: OUTER
+
+        ! c_ij = a_i * b_j 
+        OUTER = SPREAD(A, DIM=2, NCOPIES=SIZE(B)) * SPREAD(B, DIM=1, NCOPIES=SIZE(A))
+    END FUNCTION OUTER
 
     SUBROUTINE TRIDIAGONAL(A, B, C, X, R) 
         IMPLICIT NONE 
