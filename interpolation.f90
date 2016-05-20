@@ -1,127 +1,108 @@
 MODULE INTERPOLATION 
     INTERFACE LAGRANGE_INTERPOLATION
-        MODULE PROCEDURE LAGRANGE_SCALAR
-        MODULE PROCEDURE LAGRANGE_VECTOR
+        MODULE PROCEDURE LAGRANGE
+        MODULE PROCEDURE LAGRANGE_ARRAY
     END INTERFACE
 
     INTERFACE CUBIC_SPLINE_INTERPOLATION 
-        MODULE PROCEDURE CUBIC_SPLINE_VECTOR
-        MODULE PROCEDURE CUBIC_SPLINE_SCALAR
+        MODULE PROCEDURE CUBIC_SPLINE
+        MODULE PROCEDURE CUBIC_SPLINE_ARRAY
     END INTERFACE CUBIC_SPLINE_INTERPOLATION 
 
 CONTAINS 
 
-    FUNCTION LAGRANGE_SCALAR(x, t, y) 
+    !------------------------! 
+    ! Lagrange Interpolation ! 
+    !------------------------! 
+    FUNCTION LAGRANGE(x, t, y) 
         IMPLICIT NONE 
 
         REAL, INTENT(IN)               :: x
         REAL, DIMENSION(:), INTENT(IN) :: t, y
-        REAL                           :: LAGRANGE_SCALAR
+        REAL                           :: LAGRANGE
 
-        ! sanity check
-        IF ( SIZE(t) /= SIZE(y) ) &
-            STOP 'Incompatible number of data between x and f(x)'
-
-        LAGRANGE_SCALAR = LAGRANGE_POLYNOMIAL(x, t, y)
-    END FUNCTION LAGRANGE_SCALAR
-
-    FUNCTION LAGRANGE_VECTOR(x, t, y)
-        IMPLICIT NONE 
-
-        REAL, DIMENSION(:), INTENT(IN) :: x, t, y
-        REAL, DIMENSION(SIZE(x))       :: LAGRANGE_VECTOR
-
-        INTEGER                        :: i  
-
-        ! initialization 
-        LAGRANGE_VECTOR = 0 
-
-        ! sanity check
-        IF ( SIZE(t) /= SIZE(y) ) &
-            STOP 'Incompatible number of data between x and f(x)'
-
-        DO i = 1, SIZE(x)
-            LAGRANGE_VECTOR(i) = LAGRANGE_POLYNOMIAL(x(i), t, y)
-        END DO
-    END FUNCTION LAGRANGE_VECTOR
-
-    FUNCTION LAGRANGE_POLYNOMIAL(x, t, y)
-        IMPLICIT NONE 
-
-        REAL, INTENT(IN)               :: x
-        REAL, DIMENSION(:), INTENT(IN) :: t, y
-        REAL                           :: LAGRANGE_POLYNOMIAL
-
-        REAL                           :: coefficient 
+        REAL                           :: coefficient
         INTEGER                        :: j, k
 
+        ! sanity check
+        IF ( SIZE(t) /= SIZE(y) ) STOP 'Incompatible number of data between x and f(x)'
+        
         ! initialization 
-        LAGRANGE_POLYNOMIAL = 0 
-
+        LAGRANGE = 0 
+        
         ! loop through n data point 
         DO j = 1, SIZE(t)
             coefficient = 1.0     
 
             ! kronecker delta
             DO k = 1, SIZE(t) 
-                IF ( j /= k ) & 
+                IF ( k /= j ) & 
                     coefficient = coefficient * (x - t(k)) / (t(j) - t(k))
             END DO 
 
-            LAGRANGE_POLYNOMIAL = LAGRANGE_POLYNOMIAL + coefficient * y(j)
-        END DO   
-    END FUNCTION LAGRANGE_POLYNOMIAL
+            LAGRANGE = LAGRANGE + coefficient * y(j)
+        END DO
+    END FUNCTION LAGRANGE
 
-    FUNCTION CUBIC_SPLINE_SCALAR(x, t, y) 
+    FUNCTION LAGRANGE_ARRAY(x, t, y)
         IMPLICIT NONE 
 
-        REAL, INTENT(IN)                :: x 
-        REAL, DIMENSION(:), INTENT(IN)  :: t, y
-        REAL                            :: CUBIC_SPLINE_SCALAR
+        REAL, DIMENSION(:), INTENT(IN) :: x, t, y
+        REAL, DIMENSION(SIZE(x))       :: LAGRANGE_ARRAY
 
-        REAL, DIMENSION(:), ALLOCATABLE :: S2
-        INTEGER                         :: NSIZE
+        INTEGER                        :: i
+
+        ! initialization 
+        LAGRANGE_ARRAY = 0 
 
         ! sanity check
-        IF ( SIZE(t) /= SIZE(y) ) &
-            STOP 'Incompatible number of data between x and f(x)'
+        IF ( SIZE(t) /= SIZE(y) ) STOP 'Incompatible number of data between x and f(x)'
 
-        NSIZE = SIZE(t)
+        DO i = 1, SIZE(x)
+            LAGRANGE_ARRAY(i) = LAGRANGE(x(i), t, y)
+        END DO
+    END FUNCTION LAGRANGE_ARRAY
 
-        ALLOCATE(S2(NSIZE))
+    !----------------------------! 
+    ! Cubic Spline Interpolation ! 
+    !----------------------------! 
+    FUNCTION CUBIC_SPLINE(x, t, y) 
+        IMPLICIT NONE 
 
+        REAL, INTENT(IN)               :: x 
+        REAL, DIMENSION(:), INTENT(IN) :: t, y
+        REAL                           :: CUBIC_SPLINE
+
+        REAL, DIMENSION(SIZE(t))       :: S2
+
+        ! sanity check
+        IF ( SIZE(t) /= SIZE(y) ) STOP 'Incompatible number of data between x and f(x)'
+
+        ! solve for the set of second derivatives 
         CALL CUBIC_SPLINE_INIT(t, y, S2)
 
-        CUBIC_SPLINE_SCALAR = CUBIC_SPLINE_POLYNOMIAL(x, t, y, S2)
+        CUBIC_SPLINE = CUBIC_SPLINE_POLYNOMIAL(x, t, y, S2)
+    END FUNCTION CUBIC_SPLINE
 
-        DEALLOCATE(S2)
-    END FUNCTION CUBIC_SPLINE_SCALAR
-
-    FUNCTION CUBIC_SPLINE_VECTOR(x, t, y) 
+    FUNCTION CUBIC_SPLINE_ARRAY(x, t, y) 
         IMPLICIT NONE 
 
-        REAL, DIMENSION(:), INTENT(IN)  :: x, t, y
-        REAL, DIMENSION(SIZE(x))        :: CUBIC_SPLINE_VECTOR
+        REAL, DIMENSION(:), INTENT(IN) :: x, t, y
+        REAL, DIMENSION(SIZE(x))       :: CUBIC_SPLINE_ARRAY
 
-        REAL, DIMENSION(:), ALLOCATABLE :: S2 
-        INTEGER                         :: i, NSIZE
+        REAL, DIMENSION(SIZE(t))       :: S2 
+        INTEGER                        :: i
 
         ! sanity check
-        IF ( SIZE(t) /= SIZE(y) ) &
-            STOP 'Incompatible number of data between x and f(x)'
+        IF ( SIZE(t) /= SIZE(y) ) STOP 'Incompatible number of data between x and f(x)'
 
-        NSIZE = SIZE(t)
-
-        ALLOCATE(S2(NSIZE))
-
+        ! solve for the set of second derivatives 
         CALL CUBIC_SPLINE_INIT(t, y, S2)
 
         DO i = 1, SIZE(x)  
-            CUBIC_SPLINE_VECTOR(i) = CUBIC_SPLINE_POLYNOMIAL(x(i), t, y, S2)
+            CUBIC_SPLINE_ARRAY(i) = CUBIC_SPLINE_POLYNOMIAL(x(i), t, y, S2)
         END DO 
-
-        DEALLOCATE(S2)
-    END FUNCTION CUBIC_SPLINE_VECTOR
+    END FUNCTION CUBIC_SPLINE_ARRAY
 
     FUNCTION CUBIC_SPLINE_POLYNOMIAL(x, t, y, S2)
         IMPLICIT NONE 
@@ -153,19 +134,13 @@ CONTAINS
         REAL, DIMENSION(:), INTENT(IN)  :: t, y
         REAL, DIMENSION(:), INTENT(OUT) :: S2 
 
-        REAL, DIMENSION(:), ALLOCATABLE :: beta
+        REAL, DIMENSION(SIZE(t))        :: beta
         REAL                            :: a_i, b_i, c_i, r_i
-        INTEGER                         :: NSIZE 
         INTEGER                         :: i 
-
-
-        NSIZE = SIZE(t)
-        ALLOCATE(beta(NSIZE)) 
 
         ! natural spline
         ! this gives rise to a N-2 linear system of equations  
-        S2(1) = 0.0 
-        S2(NSIZE) = 0.0 
+        S2 = 0.0
 
         ! note: i = 2, N-1
         ! beta(1) and beta(N) is undefined because of boundary condition 
@@ -173,7 +148,7 @@ CONTAINS
         S2(2)   = 6 * ((y(3) - y(2)) / (t(3) - t(2)) - (y(2) - y(1)) / (t(2) - t(1)))  
 
         ! forward elimination 
-        DO i = 3, NSIZE - 1 
+        DO i = 3, SIZE(t) - 1 
             ! off-diagonal term ( symmetric matrix A(i) = C(i-1) )
             a_i = t(i) - t(i-1) 
             c_i = a_i
@@ -190,13 +165,11 @@ CONTAINS
         END DO 
 
         ! backward substitution 
-        S2(NSIZE - 1) = S2(NSIZE - 1) / beta(NSIZE - 1)
-        DO i = NSIZE - 2, 2, -1
+        S2(SIZE(t) - 1) = S2(SIZE(t) - 1) / beta(SIZE(t) - 1)
+        DO i = SIZE(t) - 2, 2, -1
             c_i   = t(i+1) - t(i) 
             S2(i) = (S2(i) - c_i * S2(i+1)) / beta(i) 
         END DO 
-
-        DEALLOCATE(beta)
     END SUBROUTINE CUBIC_SPLINE_INIT
 
     FUNCTION CUBIC_SPLINE_INDEX(x, t)
@@ -229,8 +202,10 @@ CONTAINS
             CUBIC_SPLINE_INDEX = 1 
         ELSE IF ( x == t(b) ) THEN 
             CUBIC_SPLINE_INDEX = b-1
+        ! otherwise lower bound 
         ELSE 
             CUBIC_SPLINE_INDEX = a 
         END IF 
     END FUNCTION CUBIC_SPLINE_INDEX
+
 END MODULE INTERPOLATION 

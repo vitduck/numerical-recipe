@@ -21,11 +21,11 @@ PROGRAM BESSEL
     dgrid = (t(N) - t(1)) / NGRID
     x     = [ ( t(1) + dgrid * i , i = 0, NGRID ) ]
 
-    ! Lagrange interpolation (vector call)
+    ! Lagrange interpolation
     ! N poly requires N+1 (x, f(x)) pair
     Lx = LAGRANGE_INTERPOLATION(x, t(4:7), J1(4:7))
 
-    ! cubic spline interpolation (vector call) 
+    ! cubic spline interpolation
     S3 = CUBIC_SPLINE_INTERPOLATION(x, t, J1)
 
     ! debug   
